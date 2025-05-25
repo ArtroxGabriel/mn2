@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"math"
 	"os"
+
+	"github.com/ArtroxGabriel/mn2/derivacao_numerica/philosophys"
 )
 
 type Derivada interface {
@@ -26,12 +28,12 @@ func main() {
 
 	x := 2.0
 	dx := 0.5
-	limiteErro := 1e-6
+	limiteErro := 1e-4
 
-	derivadaPrimeiraFn := derivadaPrimeiraFactory(
+	derivadaPrimeiraFn := philosophys.DerivadaSegundaFactory(
 		ctx,
 		fn,
-		'f',
+		'c',
 	)
 
 	resultadoAtual := derivadaPrimeiraFn(x, dx)
