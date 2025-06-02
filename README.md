@@ -13,7 +13,7 @@ Este repositório contém implementações de métodos numéricos para cálculo 
 - [x] **Ordem O(h)** - Diferença Forward
 - [x] **Ordem O(h)** - Diferença Backward
 - [x] **Ordem O(h²)** - Diferença Central
-- [ ] **Ordem O(h³)** - Diferença Central
+- [x] **Ordem O(h³)** - Diferença Forward
 - [ ] **Ordem O(h⁴)** - Diferença Central
 
 #### Derivadas Segundas (2ª Derivada)
