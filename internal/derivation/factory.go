@@ -5,6 +5,8 @@ import (
 	"log/slog"
 
 	"github.com/ArtroxGabriel/numeric-methods-cli/internal/common"
+	firstorder "github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation/strategies/first-order"
+	secondorder "github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation/strategies/second-order"
 )
 
 func DerivacaoFactory(ctx context.Context, strategy string, order int) (DerivationStrategy, error) {
@@ -16,15 +18,15 @@ func DerivacaoFactory(ctx context.Context, strategy string, order int) (Derivati
 	var derivation DerivationStrategy
 	switch {
 	case strategy == "forward" && order == 1:
-		derivation = &ForwardFirstOrderStrategy{}
+		derivation = &firstorder.ForwardFirstOrderStrategy{}
 	case strategy == "forward" && order == 2:
-		derivation = &ForwardSecondOrderStrategy{}
+		derivation = &secondorder.ForwardSecondOrderStrategy{}
 	case strategy == "backward" && order == 1:
-		derivation = &BackwardFirstOrderStrategy{}
+		derivation = &firstorder.BackwardFirstOrderStrategy{}
 	case strategy == "backward" && order == 2:
-		derivation = &BackwardSecondOrderStrategy{}
+		derivation = &secondorder.BackwardSecondOrderStrategy{}
 	case strategy == "central" && order == 2:
-		derivation = &CentralSecondOrderStrategy{}
+		derivation = &secondorder.CentralSecondOrderStrategy{}
 	default:
 		slog.ErrorContext(ctx, "Invalid derivation strategy")
 		return nil, common.ErrInvalidStrategy
