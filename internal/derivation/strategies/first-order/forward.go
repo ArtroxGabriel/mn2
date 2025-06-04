@@ -1,11 +1,8 @@
 package firstorder
 
-import "context"
-
 type ForwardFirstOrderStrategy struct{}
 
 func (f *ForwardFirstOrderStrategy) CalculateFirst(
-	ctx context.Context,
 	fn func(float64) float64,
 	x, h float64,
 ) float64 {
@@ -13,7 +10,6 @@ func (f *ForwardFirstOrderStrategy) CalculateFirst(
 }
 
 func (f *ForwardFirstOrderStrategy) CalculateSecond(
-	ctx context.Context,
 	fn func(float64) float64,
 	x, h float64,
 ) float64 {
@@ -21,7 +17,6 @@ func (f *ForwardFirstOrderStrategy) CalculateSecond(
 }
 
 func (f *ForwardFirstOrderStrategy) CalculateThirty(
-	ctx context.Context,
 	fn func(float64) float64,
 	x, h float64,
 ) float64 {

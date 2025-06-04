@@ -1,37 +1,37 @@
 package derivation
 
 import (
-	"context"
-	"log/slog"
-
 	"github.com/ArtroxGabriel/numeric-methods-cli/internal/common"
 	firstorder "github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation/strategies/first-order"
+	fourthorder "github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation/strategies/fourth-order"
 	secondorder "github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation/strategies/second-order"
+	thirdorder "github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation/strategies/third-order"
 )
 
-func DerivacaoFactory(ctx context.Context, strategy string, order int) (DerivationStrategy, error) {
-	slog.DebugContext(ctx, "Creating derivation strategy",
-		slog.String("strategy", strategy),
-		slog.Int("order", order),
-	)
-
+func DerivacaoFactory(strategy string, order uint) (DerivationStrategy, error) {
 	var derivation DerivationStrategy
 	switch {
-	case strategy == "forward" && order == 1:
+	case strategy == "Forward" && order == 1:
 		derivation = &firstorder.ForwardFirstOrderStrategy{}
-	case strategy == "forward" && order == 2:
+	case strategy == "Forward" && order == 2:
 		derivation = &secondorder.ForwardSecondOrderStrategy{}
-	case strategy == "backward" && order == 1:
+	case strategy == "Forward" && order == 3:
+		derivation = &thirdorder.ForwardThirOrderStrategy{}
+
+	case strategy == "Backward" && order == 1:
 		derivation = &firstorder.BackwardFirstOrderStrategy{}
-	case strategy == "backward" && order == 2:
+	case strategy == "Backward" && order == 2:
 		derivation = &secondorder.BackwardSecondOrderStrategy{}
-	case strategy == "central" && order == 2:
+	case strategy == "Backward" && order == 3:
+		derivation = &thirdorder.BackwardThirOrderStrategy{}
+
+	case strategy == "Central" && order == 2:
 		derivation = &secondorder.CentralSecondOrderStrategy{}
+	case strategy == "Central" && order == 4:
+		derivation = &fourthorder.CentralFourthOrderStrategy{}
 	default:
-		slog.ErrorContext(ctx, "Invalid derivation strategy")
 		return nil, common.ErrInvalidStrategy
 	}
 
-	slog.InfoContext(ctx, "Derivation created succesfully")
 	return derivation, nil
 }
