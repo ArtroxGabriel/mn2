@@ -8,28 +8,37 @@ Este repositório contém implementações de métodos numéricos para cálculo 
 
 ### 📊 Derivadas Numéricas
 
-#### Derivadas Primeiras (1ª Derivada)
+#### Derivadas Primeiras (1ª Derivada
 
-- [x] **Ordem O(h)** - Diferença Forward
-- [x] **Ordem O(h)** - Diferença Backward
+- [x] **O(h)** - Diferença Forward
+- [x] **O(h²)** - Diferença Forward
+- [] **O(h³)** - Diferença Forward
+- [x] **O(h)** - Diferença Backward
+- [x] **O(h²)** - Diferença Backward
+- [] **O(h³)** - Diferença Backward
 - [x] **Ordem O(h²)** - Diferença Central
-- [x] **Ordem O(h³)** - Diferença Forward
 - [ ] **Ordem O(h⁴)** - Diferença Central
 
 #### Derivadas Segundas (2ª Derivada)
 
-- [x] **Ordem O(h)** - Diferença Forward
-- [x] **Ordem O(h)** - Diferença Backward
+- [x] **O(h)** - Diferença Forward
+- [x] **O(h²)** - Diferença Forward
+- [] **O(h³)** - Diferença Forward
+- [x] **O(h)** - Diferença Backward
+- [x] **O(h²)** - Diferença Backward
+- [] **O(h³)** - Diferença Backward
 - [x] **Ordem O(h²)** - Diferença Central
-- [ ] **Ordem O(h³)** - Diferença Central
 - [ ] **Ordem O(h⁴)** - Diferença Central
 
 #### Derivadas Terceiras (3ª Derivada)
 
-- [ ] **Ordem O(h)** - Diferença Forward
-- [ ] **Ordem O(h)** - Diferença Backward
-- [ ] **Ordem O(h²)** - Diferença Central
-- [ ] **Ordem O(h³)** - Diferença Central
+- [x] **O(h)** - Diferença Forward
+- [x] **O(h²)** - Diferença Forward
+- [] **O(h³)** - Diferença Forward
+- [x] **O(h)** - Diferença Backward
+- [x] **O(h²)** - Diferença Backward
+- [] **O(h³)** - Diferença Backward
+- [x] **Ordem O(h²)** - Diferença Central
 - [ ] **Ordem O(h⁴)** - Diferença Central
 
 ### 🔢 Integrais Numéricas

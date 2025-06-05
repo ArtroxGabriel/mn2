@@ -24,6 +24,13 @@ type DerivativeOrderOption struct {
 	Value   int
 }
 
+var allPossibleErrorOrderOptions = []ErrorOrderOption{
+	{Display: "Ordem 1 (O(h))", Value: 1},
+	{Display: "Ordem 2 (O(h^2))", Value: 2},
+	{Display: "Ordem 3 (O(h^3))", Value: 3},
+	{Display: "Ordem 4 (O(h^4))", Value: 4},
+}
+
 type MainModel struct {
 	state           common.State
 	mainMenuChoices []string
@@ -42,21 +49,15 @@ type MainModel struct {
 
 	focus int
 
-	philosophyOptions      []string
-	errorOrderOptions      []ErrorOrderOption
-	derivativeOrderOptions []DerivativeOrderOption
-	functionDefinitions    []common.FunctionDefinition
-	selectionCursor        int
-	tempStringInput        string
+	philosophyOptions        []string
+	currentErrorOrderOptions []ErrorOrderOption
+	derivativeOrderOptions   []DerivativeOrderOption
+	functionDefinitions      []common.FunctionDefinition
+	selectionCursor          int
 }
 
 func NewMainModel() *MainModel {
 	philosophyOpts := []string{"Forward", "Backward", "Central"}
-	errorOrderOpts := []ErrorOrderOption{
-		{Display: "Ordem 1 (O(h))", Value: 1},
-		{Display: "Ordem 2 (O(h^2))", Value: 2},
-		{Display: "Ordem 3 (O(h^3))", Value: 3},
-	}
 	derivativeOrderOpts := []DerivativeOrderOption{
 		{Display: "Primeira Derivada", Value: 1},
 		{Display: "Segunda Derivada", Value: 2},
@@ -64,20 +65,62 @@ func NewMainModel() *MainModel {
 	}
 	funcDefs := functions.GetFunctionDefinitions()
 
-	return &MainModel{
+	m := &MainModel{
 		state:                 common.StateMainMenu,
 		mainMenuChoices:       []string{"Derivação Numérica", "Integração Numérica", "Sair"},
 		derivationMenuChoices: []string{"Filosofia", "Ordem do Erro", "Ordem da Derivada", "Função", "Ponto x", "Passo h", "Calcular", "Voltar"},
 
 		philosophyOptions:      philosophyOpts,
-		errorOrderOptions:      errorOrderOpts,
 		derivativeOrderOptions: derivativeOrderOpts,
 		functionDefinitions:    funcDefs,
 
 		selectedDerivationPhilosophy: philosophyOpts[0],
-		selectedDerivationErrorOrder: errorOrderOpts[0].Value,
 		selectedDerivationOrder:      derivativeOrderOpts[0].Value,
-		selectedFunctionDef:          funcDefs[0],
+		currentX:                     "1.0",
+		currentH:                     "0.1",
+	}
+
+	if len(funcDefs) > 0 {
+		m.selectedFunctionDef = funcDefs[0]
+	}
+
+	m.updateAvailableErrorOrders(m.selectedDerivationPhilosophy)
+
+	return m
+}
+
+func (m *MainModel) updateAvailableErrorOrders(philosophy string) {
+	var availableOrders []ErrorOrderOption
+	switch philosophy {
+	case "Central":
+		for _, opt := range allPossibleErrorOrderOptions {
+			if opt.Value == 2 || opt.Value == 4 {
+				availableOrders = append(availableOrders, opt)
+			}
+		}
+	case "Forward", "Backward":
+		for _, opt := range allPossibleErrorOrderOptions {
+			if opt.Value == 1 || opt.Value == 2 || opt.Value == 3 {
+				availableOrders = append(availableOrders, opt)
+			}
+		}
+	default:
+		availableOrders = allPossibleErrorOrderOptions
+	}
+	m.currentErrorOrderOptions = availableOrders
+
+	isValidSelection := false
+	for _, opt := range m.currentErrorOrderOptions {
+		if opt.Value == m.selectedDerivationErrorOrder {
+			isValidSelection = true
+			break
+		}
+	}
+
+	if !isValidSelection && len(m.currentErrorOrderOptions) > 0 {
+		m.selectedDerivationErrorOrder = m.currentErrorOrderOptions[0].Value
+	} else if len(m.currentErrorOrderOptions) == 0 {
+		m.selectedDerivationErrorOrder = 0
 	}
 }
 
@@ -102,7 +145,14 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			default:
 				char := msg.String()
-				if (char >= "0" && char <= "9") || (char == "." && !strings.Contains(m.currentX, ".") && m.focus == common.FocusX) || (char == "." && !strings.Contains(m.currentH, ".") && m.focus == common.FocusH) {
+				currentStr := ""
+				if m.focus == common.FocusX {
+					currentStr = m.currentX
+				} else if m.focus == common.FocusH {
+					currentStr = m.currentH
+				}
+
+				if (char >= "0" && char <= "9") || (char == "." && !strings.Contains(currentStr, ".")) || (char == "-" && len(currentStr) == 0) {
 					if m.focus == common.FocusX {
 						m.currentX += char
 					} else if m.focus == common.FocusH {
@@ -156,6 +206,7 @@ func (m *MainModel) updateMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "Integração Numérica":
 			m.state = common.StateIntegrationMenu
 			m.result = "Integração Numérica ainda não implementada."
+			m.err = nil
 		case "Sair":
 			return m, tea.Quit
 		}
@@ -165,8 +216,13 @@ func (m *MainModel) updateMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m *MainModel) updateDerivationMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "ctrl+c", "q":
+	case "ctrl+c":
 		return m, tea.Quit
+	case "q":
+		m.state = common.StateMainMenu
+		m.cursor = 0
+		m.resetDerivationInputs()
+		return m, nil
 	case "up", "k":
 		if m.derivationCursor > 0 {
 			m.derivationCursor--
@@ -190,7 +246,7 @@ func (m *MainModel) updateDerivationMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "Ordem do Erro":
 			m.state = common.StateSelectErrorOrder
 			m.selectionCursor = 0
-			for i, eo := range m.errorOrderOptions {
+			for i, eo := range m.currentErrorOrderOptions {
 				if eo.Value == m.selectedDerivationErrorOrder {
 					m.selectionCursor = i
 					break
@@ -244,13 +300,25 @@ func (m *MainModel) updateSelectPhilosophy(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			m.selectionCursor++
 		}
 	case "enter":
-		m.selectedDerivationPhilosophy = m.philosophyOptions[m.selectionCursor]
+		selectedPhilosophy := m.philosophyOptions[m.selectionCursor]
+		if m.selectedDerivationPhilosophy != selectedPhilosophy {
+			m.selectedDerivationPhilosophy = selectedPhilosophy
+			m.updateAvailableErrorOrders(m.selectedDerivationPhilosophy)
+		}
 		m.state = common.StateDerivationMenu
 	}
 	return m, nil
 }
 
 func (m *MainModel) updateSelectErrorOrder(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if len(m.currentErrorOrderOptions) == 0 {
+		if msg.String() == "enter" || msg.String() == "q" || msg.String() == "ctrl+c" {
+			m.state = common.StateDerivationMenu
+			return m, nil
+		}
+		return m, nil
+	}
+
 	switch msg.String() {
 	case "ctrl+c", "q":
 		m.state = common.StateDerivationMenu
@@ -260,11 +328,13 @@ func (m *MainModel) updateSelectErrorOrder(msg tea.KeyMsg) (tea.Model, tea.Cmd) 
 			m.selectionCursor--
 		}
 	case "down", "j":
-		if m.selectionCursor < len(m.errorOrderOptions)-1 {
+		if m.selectionCursor < len(m.currentErrorOrderOptions)-1 {
 			m.selectionCursor++
 		}
 	case "enter":
-		m.selectedDerivationErrorOrder = m.errorOrderOptions[m.selectionCursor].Value
+		if m.selectionCursor >= 0 && m.selectionCursor < len(m.currentErrorOrderOptions) {
+			m.selectedDerivationErrorOrder = m.currentErrorOrderOptions[m.selectionCursor].Value
+		}
 		m.state = common.StateDerivationMenu
 	}
 	return m, nil
@@ -316,6 +386,9 @@ func (m *MainModel) updateResultScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case "enter":
 		m.state = common.StateMainMenu
+		if m.err != nil && (strings.Contains(m.err.Error(), "derivador") || strings.Contains(m.err.Error(), "combinação inválida")) {
+			m.state = common.StateDerivationMenu
+		}
 		m.result = ""
 		m.err = nil
 		m.cursor = 0
@@ -324,140 +397,37 @@ func (m *MainModel) updateResultScreen(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *MainModel) View() string {
-	s := strings.Builder{}
-
-	switch m.state {
-	case common.StateMainMenu:
-		s.WriteString("Bem-vindo aos Métodos Numéricos!\n\n")
-		for i, choice := range m.mainMenuChoices {
-			cursor := " "
-			if m.cursor == i {
-				cursor = ">"
-			}
-			s.WriteString(fmt.Sprintf("%s %s\n", cursor, choice))
-		}
-		s.WriteString("\n(Pressione 'q' para sair, 'Enter' para selecionar)")
-
-	case common.StateDerivationMenu:
-		s.WriteString("Menu de Derivação Numérica:\n\n")
-		for i, choice := range m.derivationMenuChoices {
-			cursor := " "
-			if m.derivationCursor == i {
-				cursor = ">"
-			}
-			line := fmt.Sprintf("%s %s", cursor, choice)
-			switch choice {
-			case "Filosofia":
-				line += fmt.Sprintf(": %s", m.selectedDerivationPhilosophy)
-			case "Ordem do Erro":
-				line += fmt.Sprintf(": O(h^%d)", m.selectedDerivationErrorOrder)
-			case "Ordem da Derivada":
-				line += fmt.Sprintf(": %da", m.selectedDerivationOrder)
-			case "Função":
-				name := "Nenhuma"
-				if m.selectedFunctionDef.Func != nil {
-					name = m.selectedFunctionDef.Name
-				}
-				line += fmt.Sprintf(": %s", name)
-			case "Ponto x":
-				inputX := m.currentX
-				if m.focus == common.FocusX {
-					inputX += "_"
-				}
-				line += fmt.Sprintf(": %s", inputX)
-			case "Passo h":
-				inputH := m.currentH
-				if m.focus == common.FocusH {
-					inputH += "_"
-				}
-				line += fmt.Sprintf(": %s", inputH)
-			}
-			s.WriteString(line + "\n")
-		}
-		s.WriteString("\n(Navegue com ↑/↓, 'Enter' para selecionar/editar, 'q' para sair)")
-		if m.focus == common.FocusX {
-			s.WriteString("\n[EDITANDO Ponto x: Digite o valor e pressione Enter para confirmar]")
-		} else if m.focus == common.FocusH {
-			s.WriteString("\n[EDITANDO Passo h: Digite o valor e pressione Enter para confirmar]")
-		}
-
-	case common.StateSelectPhilosophy:
-		s.WriteString("Selecione a Filosofia:\n\n")
-		for i, phil := range m.philosophyOptions {
-			cursor := " "
-			if m.selectionCursor == i {
-				cursor = ">"
-			}
-			s.WriteString(fmt.Sprintf("%s %s\n", cursor, phil))
-		}
-		s.WriteString("\n('Enter' para confirmar, 'q' para voltar)")
-
-	case common.StateSelectErrorOrder:
-		s.WriteString("Selecione a Ordem do Erro:\n\n")
-		for i, eo := range m.errorOrderOptions {
-			cursor := " "
-			if m.selectionCursor == i {
-				cursor = ">"
-			}
-			s.WriteString(fmt.Sprintf("%s %s\n", cursor, eo.Display))
-		}
-		s.WriteString("\n('Enter' para confirmar, 'q' para voltar)")
-
-	case common.StateSelectDerivativeOrder:
-		s.WriteString("Selecione a Ordem da Derivada:\n\n")
-		for i, do := range m.derivativeOrderOptions {
-			cursor := " "
-			if m.selectionCursor == i {
-				cursor = ">"
-			}
-			s.WriteString(fmt.Sprintf("%s %s\n", cursor, do.Display))
-		}
-		s.WriteString("\n('Enter' para confirmar, 'q' para voltar)")
-
-	case common.StateSelectFunction:
-		s.WriteString("Selecione a Função:\n\n")
-		for i, fd := range m.functionDefinitions {
-			cursor := " "
-			if m.selectionCursor == i {
-				cursor = ">"
-			}
-			s.WriteString(fmt.Sprintf("%s %s\n", cursor, fd.Name))
-		}
-		s.WriteString("\n('Enter' para confirmar, 'q' para voltar)")
-
-	case common.StateResult:
-		if m.err != nil {
-			s.WriteString(fmt.Sprintf("Erro: %v\n", m.err))
-		} else {
-			s.WriteString(fmt.Sprintf("Resultado: %s\n", m.result))
-		}
-		s.WriteString("\n(Pressione 'Enter' para voltar ao menu principal, 'q' para sair)")
-
-	case common.StateIntegrationMenu:
-		s.WriteString(m.result)
-		s.WriteString("\n(Pressione 'Enter' para voltar ao menu principal, 'q' para sair)")
-	}
-
-	return s.String()
+	return View(m)
 }
 
 func (m *MainModel) performDerivation() {
 	m.err = nil
 	m.result = ""
 
-	x, err := strconv.ParseFloat(m.currentX, 64)
-	if err != nil {
-		m.err = fmt.Errorf("valor inválido para x: %w. Use '.' como separador decimal.", err)
+	x, errX := strconv.ParseFloat(strings.TrimSpace(m.currentX), 64)
+	if errX != nil {
+		m.err = fmt.Errorf("valor inválido para Ponto x '%s': %w. Use '.' como separador decimal e opcionalmente '-' no início.", m.currentX, errX)
 		return
 	}
-	h, err := strconv.ParseFloat(m.currentH, 64)
-	if err != nil {
-		m.err = fmt.Errorf("valor inválido para h: %w. Use '.' como separador decimal.", err)
+	h, errH := strconv.ParseFloat(strings.TrimSpace(m.currentH), 64)
+	if errH != nil {
+		m.err = fmt.Errorf("valor inválido para Passo h '%s': %w. Use '.' como separador decimal.", m.currentH, errH)
+		return
+	}
+
+	if h == 0 {
+		m.err = common.ErrZeroValue
 		return
 	}
 
 	if m.selectedFunctionDef.Func == nil {
 		m.err = fmt.Errorf("nenhuma função selecionada")
+		return
+	}
+
+	_, factoryErrTest := derivation.DerivacaoFactory(m.selectedDerivationPhilosophy, m.selectedDerivationErrorOrder)
+	if factoryErrTest != nil {
+		m.err = fmt.Errorf("erro interno ou combinação inválida não tratada: filosofia '%s', ordem de erro O(h^%d). Detalhe: %w", m.selectedDerivationPhilosophy, m.selectedDerivationErrorOrder, factoryErrTest)
 		return
 	}
 
@@ -472,17 +442,17 @@ func (m *MainModel) performDerivation() {
 
 	calculatedVal, calcErr := derivator.Calculate(m.selectedFunctionDef.Func, x, h, m.selectedDerivationOrder)
 	if calcErr != nil {
-		m.err = fmt.Errorf("erro no cálculo: %w", calcErr)
+		if calcErr == common.ErrInvalidDerivate {
+			m.err = fmt.Errorf("a ordem da derivada selecionada (%da) não é suportada pela estratégia '%s' com ordem de erro O(h^%d). Detalhe: %w", m.selectedDerivationOrder, m.selectedDerivationPhilosophy, m.selectedDerivationErrorOrder, calcErr)
+		} else {
+			m.err = fmt.Errorf("erro no cálculo: %w", calcErr)
+		}
 		return
 	}
 	m.result = fmt.Sprintf(
-		"Derivada (%s, Ordem Erro %d, Ordem Derivada %d) da função %s em x=%.4f com h=%.4f: %.6f",
-		m.selectedDerivationPhilosophy,
-		m.selectedDerivationErrorOrder,
-		m.selectedDerivationOrder,
-		m.selectedFunctionDef.Name,
+		"f%s(%.4f) ≈ %.6f",
+		strings.Repeat("'", m.selectedDerivationOrder),
 		x,
-		h,
 		calculatedVal,
 	)
 }
@@ -491,9 +461,8 @@ func (m *MainModel) resetDerivationInputs() {
 	if len(m.philosophyOptions) > 0 {
 		m.selectedDerivationPhilosophy = m.philosophyOptions[0]
 	}
-	if len(m.errorOrderOptions) > 0 {
-		m.selectedDerivationErrorOrder = m.errorOrderOptions[0].Value
-	}
+	m.updateAvailableErrorOrders(m.selectedDerivationPhilosophy)
+
 	if len(m.derivativeOrderOptions) > 0 {
 		m.selectedDerivationOrder = m.derivativeOrderOptions[0].Value
 	}
@@ -502,8 +471,8 @@ func (m *MainModel) resetDerivationInputs() {
 	} else {
 		m.selectedFunctionDef = common.FunctionDefinition{}
 	}
-	m.currentX = ""
-	m.currentH = ""
+	m.currentX = "1.0"
+	m.currentH = "0.1"
 	m.focus = common.FocusNone
 	m.err = nil
 	m.result = ""
