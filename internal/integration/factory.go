@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/ArtroxGabriel/numeric-methods-cli/internal/integration/strategies"
-	"github.com/ArtroxGabriel/numeric-methods-cli/internal/integrationcore"
 )
 
 // IntegrationFactory creates and returns the appropriate numerical integration strategy
@@ -19,7 +18,7 @@ import (
 // Returns:
 //   - integrationcore.IntegrationStrategy: The configured strategy implementation
 //   - error: An error if the strategyName is not supported
-func IntegrationFactory(strategyName string) (integrationcore.IntegrationStrategy, error) {
+func IntegrationFactory(strategyName string) (IntegrationStrategy, error) {
 	switch strategyName {
 	// Newton-Cotes Methods
 	case "NewtonCotesOrder1":

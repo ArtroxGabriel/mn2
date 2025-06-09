@@ -1,4 +1,6 @@
-package integrationcore
+package integration
+
+import "github.com/ArtroxGabriel/numeric-methods-cli/internal/integration/strategies"
 
 // IntegrationStrategy defines the interface that all numerical integration strategies must implement.
 // This interface follows the Strategy design pattern, allowing different integration methods
@@ -18,3 +20,15 @@ type IntegrationStrategy interface {
 	//   - error: An error if the calculation fails (e.g., invalid input)
 	Calculate(fn func(float64) float64, a, b float64, n int) (float64, error)
 }
+
+var (
+	_ IntegrationStrategy = (*strategies.NewtonCotesOrder1)(nil)
+	_ IntegrationStrategy = (*strategies.NewtonCotesOrder2)(nil)
+	_ IntegrationStrategy = (*strategies.NewtonCotesOrder3)(nil)
+	_ IntegrationStrategy = (*strategies.NewtonCotesOrder4)(nil)
+
+	_ IntegrationStrategy = (*strategies.GaussLegendreOrder1)(nil)
+	_ IntegrationStrategy = (*strategies.GaussLegendreOrder2)(nil)
+	_ IntegrationStrategy = (*strategies.GaussLegendreOrder3)(nil)
+	_ IntegrationStrategy = (*strategies.GaussLegendreOrder4)(nil)
+)

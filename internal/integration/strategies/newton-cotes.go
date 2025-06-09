@@ -2,8 +2,6 @@ package strategies
 
 import (
 	"fmt"
-
-	"github.com/ArtroxGabriel/numeric-methods-cli/internal/integrationcore"
 )
 
 // NewtonCotesOrder1 implements the Trapezoidal rule for numerical integration.
@@ -49,7 +47,7 @@ func (s *NewtonCotesOrder2) Calculate(fn func(float64) float64, a, b float64, n 
 	if a == b {
 		return 0, nil
 	}
-    if a > b { // Ensure a < b for correct calculation
+	if a > b { // Ensure a < b for correct calculation
 		a, b = b, a
 	}
 
@@ -83,7 +81,7 @@ func (s *NewtonCotesOrder3) Calculate(fn func(float64) float64, a, b float64, n 
 	if a == b {
 		return 0, nil
 	}
-    if a > b { // Ensure a < b for correct calculation
+	if a > b { // Ensure a < b for correct calculation
 		a, b = b, a
 	}
 
@@ -118,7 +116,7 @@ func (s *NewtonCotesOrder4) Calculate(fn func(float64) float64, a, b float64, n 
 	if a == b {
 		return 0, nil
 	}
-    if a > b { // Ensure a < b for correct calculation
+	if a > b { // Ensure a < b for correct calculation
 		a, b = b, a
 	}
 
@@ -136,11 +134,3 @@ func (s *NewtonCotesOrder4) Calculate(fn func(float64) float64, a, b float64, n 
 
 	return (2 * h / 45) * sum, nil
 }
-
-// Compile-time interface compliance checks.
-var (
-	_ integrationcore.IntegrationStrategy = (*NewtonCotesOrder1)(nil)
-	_ integrationcore.IntegrationStrategy = (*NewtonCotesOrder2)(nil)
-	_ integrationcore.IntegrationStrategy = (*NewtonCotesOrder3)(nil)
-	_ integrationcore.IntegrationStrategy = (*NewtonCotesOrder4)(nil)
-)

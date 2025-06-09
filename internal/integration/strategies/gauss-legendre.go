@@ -2,8 +2,6 @@ package strategies
 
 import (
 	"math"
-
-	"github.com/ArtroxGabriel/numeric-methods-cli/internal/integrationcore"
 )
 
 // GaussLegendreOrder1 implements 1-point Gauss-Legendre quadrature.
@@ -19,10 +17,10 @@ func (s *GaussLegendreOrder1) Calculate(fn func(float64) float64, a, b float64, 
 	if a == b {
 		return 0, nil
 	}
-    // Transform the interval [a,b] to [-1,1] for Gauss-Legendre
-    // t = ((b-a)/2)*x + ((a+b)/2)
-    // dt = ((b-a)/2)*dx
-    // ∫[a,b] f(t) dt = ∫[-1,1] f(((b-a)/2)*x + ((a+b)/2)) * ((b-a)/2) dx
+	// Transform the interval [a,b] to [-1,1] for Gauss-Legendre
+	// t = ((b-a)/2)*x + ((a+b)/2)
+	// dt = ((b-a)/2)*dx
+	// ∫[a,b] f(t) dt = ∫[-1,1] f(((b-a)/2)*x + ((a+b)/2)) * ((b-a)/2) dx
 
 	// 1-point formula: x1 = 0, w1 = 2
 	x1 := 0.0
@@ -46,7 +44,7 @@ func (s *GaussLegendreOrder2) Calculate(fn func(float64) float64, a, b float64, 
 	weights := []float64{1.0, 1.0}
 
 	sum := 0.0
-	for i := 0; i < len(x_coords); i++ {
+	for i := range x_coords {
 		sum += weights[i] * fn(((b-a)/2)*x_coords[i]+((a+b)/2))
 	}
 
@@ -68,7 +66,7 @@ func (s *GaussLegendreOrder3) Calculate(fn func(float64) float64, a, b float64, 
 	weights := []float64{5.0 / 9.0, 8.0 / 9.0, 5.0 / 9.0}
 
 	sum := 0.0
-	for i := 0; i < len(x_coords); i++ {
+	for i := range x_coords {
 		sum += weights[i] * fn(((b-a)/2)*x_coords[i]+((a+b)/2))
 	}
 
@@ -102,17 +100,9 @@ func (s *GaussLegendreOrder4) Calculate(fn func(float64) float64, a, b float64, 
 	}
 
 	sum := 0.0
-	for i := 0; i < len(x_coords); i++ {
+	for i := range x_coords {
 		sum += weights[i] * fn(((b-a)/2)*x_coords[i]+((a+b)/2))
 	}
 
 	return ((b - a) / 2) * sum, nil
 }
-
-// Compile-time interface compliance checks.
-var (
-	_ integrationcore.IntegrationStrategy = (*GaussLegendreOrder1)(nil)
-	_ integrationcore.IntegrationStrategy = (*GaussLegendreOrder2)(nil)
-	_ integrationcore.IntegrationStrategy = (*GaussLegendreOrder3)(nil)
-	_ integrationcore.IntegrationStrategy = (*GaussLegendreOrder4)(nil)
-)

@@ -2,14 +2,12 @@ package integration
 
 import (
 	"fmt"
-
-	"github.com/ArtroxGabriel/numeric-methods-cli/internal/integrationcore"
 )
 
 // Integrator is the main struct that encapsulates an integration strategy.
 // It provides a high-level interface for numerical integration calculations.
 type Integrator struct {
-	strategy integrationcore.IntegrationStrategy
+	strategy IntegrationStrategy
 }
 
 // NewIntegrator creates a new Integrator instance with the specified strategy name.
