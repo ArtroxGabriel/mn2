@@ -139,10 +139,86 @@ func View(model *MainModel) string {
 		s.WriteString(HelpStyle.Render("\n(Pressione 'Enter' para voltar ao menu, 'q' ou Ctrl+C para sair)"))
 
 	case common.StateIntegrationMenu:
-		s.WriteString(TitleStyle.Render("Integração Numérica"))
+		s.WriteString(TitleStyle.Render("Menu de Integração Numérica:"))
 		s.WriteString("\n\n")
-		s.WriteString(model.result) //
-		s.WriteString(HelpStyle.Render("\n\n(Pressione 'Enter' para voltar ao menu principal, 'q' ou Ctrl+C para sair)"))
+		for i, choiceText := range model.integrationMenuChoices {
+			var line string
+			isSelected := model.integrationCursor == i
+
+			if isSelected {
+				line = SelectedItemStyle.Render(choiceText)
+			} else {
+				line = ListItemStyle.Render(choiceText)
+			}
+
+			valueStr := ""
+			currentValueStyle := InputValueStyle // Default style for values
+
+			// Determine if the current item is an input field and apply focused style if necessary
+			isCurrentChoiceFocusableInput := (choiceText == "Limite Inferior (a)" && model.integrationFocus == common.FocusIntegrationA) ||
+				(choiceText == "Limite Superior (b)" && model.integrationFocus == common.FocusIntegrationB) ||
+				(choiceText == "Num de Subintervalos/Ordem (n)" && model.integrationFocus == common.FocusIntegrationN)
+
+			if isSelected && isCurrentChoiceFocusableInput {
+				currentValueStyle = FocusedInputStyle
+			} else if isSelected && model.integrationFocus != common.FocusNone &&
+				(choiceText == "Limite Inferior (a)" || choiceText == "Limite Superior (b)" || choiceText == "Num de Subintervalos/Ordem (n)") {
+				// If another input is focused, but this one is selected (cursor is on it), keep standard value style
+				// This case might be redundant if selection follows focus, but good for clarity
+			}
+
+
+			switch choiceText {
+			case "Método":
+				valueStr = model.selectedIntegrationMethod
+			case "Função":
+				if model.selectedIntegrationFunctionDef.Func != nil {
+					valueStr = model.selectedIntegrationFunctionDef.Name
+				} else {
+					valueStr = "Nenhuma"
+				}
+			case "Limite Inferior (a)":
+				valueStr = model.currentA
+				if model.integrationFocus == common.FocusIntegrationA {
+					valueStr += CursorStyle.Render("_")
+				}
+			case "Limite Superior (b)":
+				valueStr = model.currentB
+				if model.integrationFocus == common.FocusIntegrationB {
+					valueStr += CursorStyle.Render("_")
+				}
+			case "Num de Subintervalos/Ordem (n)":
+				valueStr = model.currentN
+				if model.integrationFocus == common.FocusIntegrationN {
+					valueStr += CursorStyle.Render("_")
+				}
+			}
+
+			if choiceText == "Calcular" || choiceText == "Voltar" {
+				s.WriteString(line + "\n")
+			} else {
+				// For items that display a value, apply the determined style to the value part
+				s.WriteString(fmt.Sprintf("%s: %s\n", line, currentValueStyle.Render(valueStr)))
+			}
+		}
+		s.WriteString(HelpStyle.Render("\n(Navegue com ↑/↓, 'Enter' para selecionar/editar, 'q' para voltar, Ctrl+C para sair)"))
+		switch model.integrationFocus {
+		case common.FocusIntegrationA:
+			s.WriteString(HelpStyle.Render("\n[EDITANDO Limite Inferior (a): Digite o valor e pressione Enter para confirmar]"))
+		case common.FocusIntegrationB:
+			s.WriteString(HelpStyle.Render("\n[EDITANDO Limite Superior (b): Digite o valor e pressione Enter para confirmar]"))
+		case common.FocusIntegrationN:
+			s.WriteString(HelpStyle.Render("\n[EDITANDO Num de Subintervalos/Ordem (n): Digite o valor e pressione Enter para confirmar]"))
+		}
+
+	case common.StateSelectIntegrationMethod:
+		s.WriteString(TitleStyle.Render("Selecione o Método de Integração:"))
+		s.WriteString("\n\n")
+		for i, methodName := range model.availableIntegrationMethods {
+			s.WriteString(RenderListItem(methodName, model.selectionCursor == i))
+			s.WriteString("\n")
+		}
+		s.WriteString(HelpStyle.Render("\n('Enter' para confirmar, 'q' para voltar)"))
 	}
 
 	return DocStyle.Render(s.String())
