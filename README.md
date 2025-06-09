@@ -2,7 +2,9 @@
 
 ## Visão geral
 
-Este repositório contém implementações de métodos numéricos para cálculo de derivadas e integrais utilizando diferentes técnicas de aproximação numérica. O projeto foi desenvolvido em Go e inclui implementações de métodos de diferenças finitas para derivação numérica com diferentes ordens de precisão.
+Este repositório contém implementações de métodos numéricos para cálculo de derivadas e integrais utilizando diferentes técnicas de aproximação numérica, desenvolvido em Go. O foco principal é na aplicação de métodos de diferenças finitas para derivação e diversas regras para integração.
+
+Para uma discussão detalhada sobre os fundamentos teóricos dos métodos numéricos implementados, incluindo as fórmulas de diferenças finitas, ordens de precisão e análise de convergência, consulte o documento [DOCS.md](./DOCS.md).
 
 ## Checklist de Implementação
 
@@ -96,46 +98,28 @@ O projeto utiliza `slog` para logging estruturado. Os níveis disponíveis são:
 - `WARN`: Avisos sobre convergência
 - `ERROR`: Erros críticos
 
-## Fórmulas Implementadas
+## Documentação Teórica
 
-### Diferenças Finitas para 1ª Derivada
-
-**Forward (O(h)):**
-
-```
-f'(x) ≈ [f(x+h) - f(x)] / h
-```
-
-**Backward (O(h)):**
-
-```
-f'(x) ≈ [f(x) - f(x-h)] / h
-```
-
-**Central (O(h²)):**
-
-```
-f'(x) ≈ [f(x+h) - f(x-h)] / (2h)
-```
+Os conceitos teóricos detalhados, incluindo as derivações das fórmulas, análise de erro e discussões sobre a ordem de precisão para os métodos de diferenciação e integração numérica implementados neste projeto, estão documentados em [DOCS.md](./DOCS.md). Este documento serve como referência para entender os fundamentos por trás dos algoritmos.
 
 ## Análise de Convergência
 
-O programa implementa análise automática de convergência através da redução iterativa do passo `h` e cálculo do erro relativo entre iterações sucessivas.
+O programa implementa análise de convergência para os métodos numéricos, geralmente através da observação do comportamento do erro conforme o passo `h` é ajustado. Detalhes sobre a teoria da convergência e a interpretação dos resultados podem ser encontrados em [DOCS.md](./DOCS.md).
 
 ## Próximos Passos
 
-1. Implementar derivadas de segunda e terceira ordem
-2. Adicionar métodos de ordem superior (O(h³) e O(h⁴))
-3. Implementar módulo de integração numérica
-4. Adicionar testes unitários
-5. Implementar comparação entre métodos
-6. Adicionar análise de performance
+1. Implementar derivadas de segunda e terceira ordem.
+2. Adicionar métodos de ordem superior (O(h³) e O(h⁴)) para maior precisão.
+3. Implementar o módulo de integração numérica com os métodos listados no checklist.
+4. Adicionar testes unitários robustos para todas as funções implementadas.
+5. Implementar funcionalidades para comparar o desempenho e a precisão de diferentes métodos.
+6. Adicionar análise de performance para otimizar os cálculos.
 
 ## Contribuição
 
 Para contribuir com o projeto:
 
-1. Marque os itens implementados no checklist
-2. Adicione testes para novos métodos
-3. Mantenha o padrão de logging estruturado
-4. Documente as fórmulas utilizadas
+1. Marque os itens implementados no checklist.
+2. Adicione testes unitários para quaisquer novos métodos ou modificações.
+3. Siga o padrão de logging estruturado com `slog`.
+4. Consulte [DOCS.md](./DOCS.md) para a base teórica e, se necessário, atualize-o ao introduzir novos conceitos.
