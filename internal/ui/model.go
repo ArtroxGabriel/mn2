@@ -8,9 +8,21 @@ import (
 	"github.com/ArtroxGabriel/numeric-methods-cli/internal/common"
 	"github.com/ArtroxGabriel/numeric-methods-cli/internal/derivation"
 	"github.com/ArtroxGabriel/numeric-methods-cli/internal/functions"
+	"github.com/ArtroxGabriel/numeric-methods-cli/internal/integration" // Added import
 
 	tea "github.com/charmbracelet/bubbletea"
 )
+
+var integrationMethodDisplayToStrategyName = map[string]string{
+	"Regra do Trapézio (Newton-Cotes O1)": "NewtonCotesOrder1",
+	"Simpson 1/3 (Newton-Cotes O2)":     "NewtonCotesOrder2",
+	"Simpson 3/8 (Newton-Cotes O3)":     "NewtonCotesOrder3",
+	"Regra de Boole (Newton-Cotes O4)":  "NewtonCotesOrder4",
+	"Gauss-Legendre O1":                 "GaussLegendreOrder1",
+	"Gauss-Legendre O2":                 "GaussLegendreOrder2",
+	"Gauss-Legendre O3":                 "GaussLegendreOrder3",
+	"Gauss-Legendre O4":                 "GaussLegendreOrder4",
+}
 
 var _ tea.Model = (*MainModel)(nil)
 
@@ -54,6 +66,19 @@ type MainModel struct {
 	derivativeOrderOptions   []DerivativeOrderOption
 	functionDefinitions      []common.FunctionDefinition
 	selectionCursor          int
+
+	// Integration fields
+	integrationMenuChoices        []string
+	integrationCursor             int
+	selectedIntegrationMethod     string
+	availableIntegrationMethods   []string
+	currentA                      string
+	currentB                      string
+	currentN                      string
+	selectedIntegrationFunctionDef common.FunctionDefinition
+	integrationFocus              int
+
+	previousState common.State // Added to store the state before navigating to a sub-menu like function selection
 }
 
 func NewMainModel() *MainModel {
@@ -85,6 +110,29 @@ func NewMainModel() *MainModel {
 	}
 
 	m.updateAvailableErrorOrders(m.selectedDerivationPhilosophy)
+
+	// Initialize integration fields
+	m.integrationMenuChoices = []string{"Método", "Função", "Limite Inferior (a)", "Limite Superior (b)", "Num de Subintervalos/Ordem (n)", "Calcular", "Voltar"}
+	m.availableIntegrationMethods = []string{
+		"Regra do Trapézio (Newton-Cotes O1)", // Maps to NewtonCotesOrder1
+		"Simpson 1/3 (Newton-Cotes O2)",     // Maps to NewtonCotesOrder2
+		"Simpson 3/8 (Newton-Cotes O3)",     // Maps to NewtonCotesOrder3
+		"Regra de Boole (Newton-Cotes O4)",  // Maps to NewtonCotesOrder4
+		"Gauss-Legendre O1",                 // Maps to GaussLegendreOrder1
+		"Gauss-Legendre O2",                 // Maps to GaussLegendreOrder2
+		"Gauss-Legendre O3",                 // Maps to GaussLegendreOrder3
+		"Gauss-Legendre O4",                 // Maps to GaussLegendreOrder4
+	}
+	if len(m.availableIntegrationMethods) > 0 {
+		m.selectedIntegrationMethod = m.availableIntegrationMethods[0] // Default selection
+	}
+	if len(funcDefs) > 0 { // Reuse function definitions from derivation for now
+		m.selectedIntegrationFunctionDef = funcDefs[0]
+	}
+	m.currentA = "0.0"
+	m.currentB = "1.0"
+	m.currentN = "10"
+	m.integrationFocus = common.FocusNone // Assuming common.FocusNone is 0 or defined
 
 	return m
 }
@@ -163,6 +211,55 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+		// Handle input for integration fields (A, B, N)
+		if m.state == common.StateIntegrationMenu && m.integrationFocus != common.FocusNone {
+			switch msg.String() {
+			case "enter":
+				m.integrationFocus = common.FocusNone
+				return m, nil
+			case "backspace":
+				if m.integrationFocus == common.FocusIntegrationA && len(m.currentA) > 0 {
+					m.currentA = m.currentA[:len(m.currentA)-1]
+				} else if m.integrationFocus == common.FocusIntegrationB && len(m.currentB) > 0 {
+					m.currentB = m.currentB[:len(m.currentB)-1]
+				} else if m.integrationFocus == common.FocusIntegrationN && len(m.currentN) > 0 {
+					m.currentN = m.currentN[:len(m.currentN)-1]
+				}
+				return m, nil
+			default:
+				char := msg.String()
+				var targetStr *string
+				isNField := false
+
+				if m.integrationFocus == common.FocusIntegrationA {
+					targetStr = &m.currentA
+				} else if m.integrationFocus == common.FocusIntegrationB {
+					targetStr = &m.currentB
+				} else if m.integrationFocus == common.FocusIntegrationN {
+					targetStr = &m.currentN
+					isNField = true
+				}
+
+				if targetStr != nil {
+					if isNField { // N field (subintervals/order) should only accept positive integers
+						if char >= "0" && char <= "9" {
+							// Prevent leading zeros unless it's the only digit
+							if *targetStr == "0" && char != "0" {
+								*targetStr = char
+							} else if *targetStr != "0" || char != "0" { // Allow '0' if it's not already '0'
+								*targetStr += char
+							}
+						}
+					} else { // A and B fields (limits) can be float
+						if (char >= "0" && char <= "9") || (char == "." && !strings.Contains(*targetStr, ".")) || (char == "-" && len(*targetStr) == 0) {
+							*targetStr += char
+						}
+					}
+				}
+				return m, nil
+			}
+		}
+
 		switch m.state {
 		case common.StateMainMenu:
 			return m.updateMainMenu(msg)
@@ -176,8 +273,12 @@ func (m *MainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.updateSelectDerivativeOrder(msg)
 		case common.StateSelectFunction:
 			return m.updateSelectFunction(msg)
-		case common.StateResult, common.StateIntegrationMenu:
+		case common.StateResult:
 			return m.updateResultScreen(msg)
+		case common.StateIntegrationMenu:
+			return m.updateIntegrationMenu(msg)
+		// Note: StateSelectIntegrationMethod will need its own update function if it's a separate screen
+		// For now, assuming selection happens and returns to StateIntegrationMenu or handled by a generic selector
 		}
 	}
 	return m, nil
@@ -205,7 +306,7 @@ func (m *MainModel) updateMainMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.result = ""
 		case "Integração Numérica":
 			m.state = common.StateIntegrationMenu
-			m.result = "Integração Numérica ainda não implementada."
+			m.resetIntegrationInputs() // Call the reset method
 			m.err = nil
 		case "Sair":
 			return m, tea.Quit
@@ -262,8 +363,10 @@ func (m *MainModel) updateDerivationMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 				}
 			}
 		case "Função":
+			m.previousState = m.state // Store current state (StateDerivationMenu)
 			m.state = common.StateSelectFunction
 			m.selectionCursor = 0
+			// Set selection cursor to currently selected derivation function
 			for i, fd := range m.functionDefinitions {
 				if fd.ID == m.selectedFunctionDef.ID {
 					m.selectionCursor = i
@@ -289,7 +392,16 @@ func (m *MainModel) updateDerivationMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m *MainModel) updateSelectPhilosophy(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c", "q":
-		m.state = common.StateDerivationMenu
+		if m.previousState != 0 {
+			m.state = m.previousState
+		} else {
+			// Fallback if previousState somehow not set, though it should be.
+			// Defaulting to StateDerivationMenu might be contextually wrong if called from integration.
+			// However, StateSelectFunction was originally only for derivation.
+			// This logic implies StateSelectFunction should ideally know its caller without previousState if it were more isolated.
+			m.state = common.StateDerivationMenu // Or StateMainMenu for a more generic fallback
+		}
+		m.previousState = 0 // Reset previousState
 		return m, nil
 	case "up", "k":
 		if m.selectionCursor > 0 {
@@ -374,8 +486,32 @@ func (m *MainModel) updateSelectFunction(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.selectionCursor++
 		}
 	case "enter":
-		m.selectedFunctionDef = m.functionDefinitions[m.selectionCursor]
-		m.state = common.StateDerivationMenu
+		if m.selectionCursor < 0 || m.selectionCursor >= len(m.functionDefinitions) {
+			// Should not happen if navigation is correct, but as a safeguard:
+			if m.previousState != 0 {
+				m.state = m.previousState
+			} else {
+				m.state = common.StateMainMenu // Fallback
+			}
+			m.previousState = 0
+			return m, nil
+		}
+
+		selectedFunc := m.functionDefinitions[m.selectionCursor]
+
+		if m.previousState == common.StateIntegrationMenu {
+			m.selectedIntegrationFunctionDef = selectedFunc
+		} else {
+			// Default to derivation or handle other previous states if any
+			m.selectedFunctionDef = selectedFunc
+		}
+
+		if m.previousState != 0 { // Check if previousState was set
+			m.state = m.previousState
+		} else {
+			m.state = common.StateMainMenu // Fallback, though previousState should always be set
+		}
+		m.previousState = 0 // Reset previousState
 	}
 	return m, nil
 }
@@ -477,4 +613,139 @@ func (m *MainModel) resetDerivationInputs() {
 	m.err = nil
 	m.result = ""
 	m.derivationCursor = 0
+}
+
+func (m *MainModel) resetIntegrationInputs() {
+	if len(m.availableIntegrationMethods) > 0 {
+		m.selectedIntegrationMethod = m.availableIntegrationMethods[0]
+	}
+	if len(m.functionDefinitions) > 0 {
+		// For now, let's assume we want to use the same function list and selected function
+		// as derivation. This might change based on specific integration requirements.
+		m.selectedIntegrationFunctionDef = m.functionDefinitions[0]
+	}
+	m.currentA = "0.0"
+	m.currentB = "1.0"
+	m.currentN = "10" // Default N value, can be adjusted
+	m.integrationFocus = common.FocusNone
+	m.err = nil
+	m.result = ""
+	m.integrationCursor = 0
+}
+
+func (m *MainModel) updateIntegrationMenu(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "ctrl+c":
+		return m, tea.Quit
+	case "q":
+		m.state = common.StateMainMenu
+		m.cursor = 0 // Reset main menu cursor
+		m.resetIntegrationInputs()
+		return m, nil
+	case "up", "k":
+		if m.integrationCursor > 0 {
+			m.integrationCursor--
+		}
+	case "down", "j":
+		if m.integrationCursor < len(m.integrationMenuChoices)-1 {
+			m.integrationCursor++
+		}
+	case "enter":
+		choice := m.integrationMenuChoices[m.integrationCursor]
+		switch choice {
+		case "Método":
+			m.state = common.StateSelectIntegrationMethod // This state will need its own view and update logic
+			m.selectionCursor = 0
+			for i, method := range m.availableIntegrationMethods {
+				if method == m.selectedIntegrationMethod {
+					m.selectionCursor = i
+					break
+				}
+			}
+		case "Função":
+			m.previousState = m.state // Store current state (StateIntegrationMenu)
+			m.state = common.StateSelectFunction
+			m.selectionCursor = 0
+			// Set selection cursor to currently selected integration function
+			for i, fd := range m.functionDefinitions {
+				if fd.ID == m.selectedIntegrationFunctionDef.ID {
+					m.selectionCursor = i
+					break
+				}
+			}
+		case "Limite Inferior (a)":
+			m.integrationFocus = common.FocusIntegrationA
+		case "Limite Superior (b)":
+			m.integrationFocus = common.FocusIntegrationB
+		case "Num de Subintervalos/Ordem (n)":
+			m.integrationFocus = common.FocusIntegrationN
+		case "Calcular":
+			m.performIntegration()
+		case "Voltar":
+			m.state = common.StateMainMenu
+			m.cursor = 0 // Reset main menu cursor
+			m.resetIntegrationInputs()
+		}
+	}
+	return m, nil
+}
+
+func (m *MainModel) performIntegration() {
+	m.err = nil
+	m.result = ""
+	m.state = common.StateResult // Set state to result regardless of outcome for now
+
+	a, errA := strconv.ParseFloat(strings.TrimSpace(m.currentA), 64)
+	if errA != nil {
+		m.err = fmt.Errorf("valor inválido para Limite Inferior (a) '%s': %w. Use '.' como separador decimal.", m.currentA, errA)
+		return
+	}
+
+	b, errB := strconv.ParseFloat(strings.TrimSpace(m.currentB), 64)
+	if errB != nil {
+		m.err = fmt.Errorf("valor inválido para Limite Superior (b) '%s': %w. Use '.' como separador decimal.", m.currentB, errB)
+		return
+	}
+
+	n, errN := strconv.Atoi(strings.TrimSpace(m.currentN))
+	if errN != nil {
+		m.err = fmt.Errorf("valor inválido para Num de Subintervalos/Ordem (n) '%s': %w. Deve ser um inteiro.", m.currentN, errN)
+		return
+	}
+
+	if a >= b {
+		m.err = fmt.Errorf("o limite inferior 'a' (%.2f) deve ser menor que o limite superior 'b' (%.2f)", a, b)
+		return
+	}
+
+	if n <= 0 {
+		m.err = fmt.Errorf("o número de subintervalos/ordem 'n' (%d) deve ser um inteiro positivo", n)
+		return
+	}
+
+	if m.selectedIntegrationFunctionDef.Func == nil {
+		m.err = fmt.Errorf("nenhuma função selecionada para integração")
+		return
+	}
+
+	strategyName, ok := integrationMethodDisplayToStrategyName[m.selectedIntegrationMethod]
+	if !ok {
+		m.err = fmt.Errorf("método de integração selecionado ('%s') não tem um nome de estratégia interna definido", m.selectedIntegrationMethod)
+		return
+	}
+
+	integrator, err := integration.NewIntegrator(strategyName)
+	if err != nil {
+		m.err = fmt.Errorf("falha ao criar integrador para estratégia '%s': %w", strategyName, err)
+		return
+	}
+
+	calculatedVal, calcErr := integrator.Calculate(m.selectedIntegrationFunctionDef.Func, a, b, n)
+	if calcErr != nil {
+		m.err = fmt.Errorf("erro no cálculo da integral com %s (n=%d): %w", m.selectedIntegrationMethod, n, calcErr)
+		return
+	}
+
+	m.result = fmt.Sprintf("∫[%.2f, %.2f] %s dx ≈ %.6f", a, b, m.selectedIntegrationFunctionDef.Name, calculatedVal)
+	// m.state is already set to common.StateResult at the beginning of the function
 }

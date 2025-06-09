@@ -12,7 +12,11 @@ const (
 	StateSelectDerivativeOrder
 	StateSelectFunction
 	StateResult
-	StateIntegrationMenu // Mantendo como placeholder
+	StateIntegrationMenu
+	StateSelectIntegrationMethod
+	StateSelectIntegrationLimitA // May not be needed if direct input is used
+	StateSelectIntegrationLimitB // May not be needed if direct input is used
+	StateSelectIntegrationN      // May not be needed if direct input is used
 	// Adicione outros estados conforme necessário
 )
 
@@ -24,7 +28,10 @@ type FunctionDefinition struct {
 
 // Constantes para foco em campos de input
 const (
-	FocusNone = 0
-	FocusX    = 1
-	FocusH    = 2
+	FocusNone int = iota
+	FocusX
+	FocusH
+	FocusIntegrationA
+	FocusIntegrationB
+	FocusIntegrationN
 )
