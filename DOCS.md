@@ -1,101 +1,187 @@
-# Numerical Differentiation
+# Relatório sobre Métodos e Estratégias Numéricas
 
-Numerical differentiation is a technique used to estimate the derivative of a function at a point using function values at discrete points. This is particularly useful when the function is given as a set of data points or when the analytical derivative is difficult or impossible to compute.
+---
 
-## Finite Difference Methods
+## Introdução
 
-Finite difference methods approximate derivatives by replacing them with differences between function values at nearby points. The choice of which points to use determines the specific method.
+Este documento descreve os métodos de diferenciação e integração numérica implementados e utilizados neste projeto. Ele detalha os fundamentos teóricos desses métodos e explica como eles são aplicados na prática na base de código, fornecendo uma visão abrangente das estratégias numéricas empregadas.
 
-### Forward Difference
+---
 
-The forward difference method approximates the derivative at a point `x` using the function value at `x` and `x+h`, where `h` is a small step size.
+## Diferenciação Numérica
 
-**Formula:**
+Diferenciação numérica é uma técnica utilizada para estimar a derivada de uma função em um ponto usando valores da função em pontos discretos. Isso é particularmente útil quando a função é dada como um conjunto de pontos de dados ou quando a derivada analítica é difícil ou impossível de calcular.
+
+### Métodos de Diferenças Finitas
+
+Métodos de diferenças finitas aproximam derivadas substituindo-as por diferenças entre valores de função em pontos próximos. A escolha de quais pontos usar determina o método específico.
+
+#### Diferença Progressiva (Forward Difference)
+
+O método da diferença progressiva aproxima a derivada em um ponto `x` usando o valor da função em `x` e `x+h`, onde `h` é um pequeno tamanho de passo.
+
+**Fórmula:**
 
 ```
 f'(x) ≈ (f(x+h) - f(x)) / h
 ```
 
-**Explanation:**
-This method uses the slope of the line connecting the points `(x, f(x))` and `(x+h, f(x+h))` to approximate the tangent at `x`. It is a first-order method.
+**Explicação:**
+Este método usa a inclinação da linha que conecta os pontos `(x, f(x))` e `(x+h, f(x+h))` para aproximar a tangente em `x`. É um método de primeira ordem.
 
-### Backward Difference
+##### Estratégias Implementadas
 
-The backward difference method approximates the derivative at a point `x` using the function value at `x` and `x-h`.
+As seguintes estratégias são implementadas para o método da Diferença Progressiva e são usadas pelo `Derivador` quando a estratégia "Forward" é escolhida com a ordem correspondente:
 
-**Formula:**
+- `firstorder.ForwardFirstOrderStrategy` (O(h))
+- `secondorder.ForwardSecondOrderStrategy` (O(h^2))
+- `thirdorder.ForwardThirOrderStrategy` (O(h^3))
+
+#### Diferença Regressiva (Backward Difference)
+
+O método da diferença regressiva aproxima a derivada em um ponto `x` usando o valor da função em `x` e `x-h`.
+
+**Fórmula:**
 
 ```
 f'(x) ≈ (f(x) - f(x-h)) / h
 ```
 
-**Explanation:**
-This method uses the slope of the line connecting the points `(x-h, f(x-h))` and `(x, f(x))` to approximate the tangent at `x`. It is also a first-order method.
+**Explicação:**
+Este método usa a inclinação da linha que conecta os pontos `(x-h, f(x-h))` e `(x, f(x))` para aproximar a tangente em `x`. Também é um método de primeira ordem.
 
-### Central Difference
+##### Estratégias Implementadas
 
-The central difference method approximates the derivative at a point `x` using the function values at `x-h` and `x+h`.
+As seguintes estratégias são implementadas para o método da Diferença Regressiva e são usadas pelo `Derivador` quando a estratégia "Backward" é escolhida com a ordem correspondente:
 
-**Formula:**
+- `firstorder.BackwardFirstOrderStrategy` (O(h))
+- `secondorder.BackwardSecondOrderStrategy` (O(h^2))
+- `thirdorder.BackwardThirOrderStrategy` (O(h^3))
+
+#### Diferença Central (Central Difference)
+
+O método da diferença central aproxima a derivada em um ponto `x` usando os valores da função em `x-h` e `x+h`.
+
+**Fórmula:**
 
 ```
 f'(x) ≈ (f(x+h) - f(x-h)) / (2h)
 ```
 
-**Explanation:**
-This method uses the slope of the line connecting the points `(x-h, f(x-h))` and `(x+h, f(x+h))`. It generally provides a more accurate approximation than forward or backward difference methods for the same step size `h` because it considers information symmetrically around `x`. It is a second-order method for approximating the first derivative.
+**Explicação:**
+Este método usa a inclinação da linha que conecta os pontos `(x-h, f(x-h))` e `(x+h, f(x+h))`. Geralmente, ele fornece uma aproximação mais precisa do que os métodos de diferença progressiva ou regressiva para o mesmo tamanho de passo `h`, porque considera informações simetricamente em torno de `x`. É um método de segunda ordem para aproximar a primeira derivada.
 
-## Order of Accuracy
+##### Estratégias Implementadas
 
-The order of accuracy of a finite difference method indicates how the error of the approximation changes as the step size `h` is reduced.
+As seguintes estratégias são implementadas para o método da Diferença Central e são usadas pelo `Derivador` quando a estratégia "Central" é escolhida com a ordem correspondente:
 
-- **O(h) (First-order accuracy):** The error is approximately proportional to `h`. Halving `h` roughly halves the error. Forward and backward difference methods are typically O(h).
-- **O(h^2) (Second-order accuracy):** The error is approximately proportional to `h^2`. Halving `h` roughly quarters the error. The central difference method for the first derivative is typically O(h^2).
-- **O(h^4) (Fourth-order accuracy):** The error is approximately proportional to `h^4`. Halving `h` reduces the error by a factor of about 16. Higher-order methods can be derived by using more points, such as the five-point stencil for the first derivative, which is O(h^4).
+- `secondorder.CentralSecondOrderStrategy` (O(h^2))
+- `fourthorder.CentralFourthOrderStrategy` (O(h^4))
 
-Higher-order methods generally provide better accuracy for a given step size `h`, but they may require more function evaluations and can be more susceptible to round-off errors if `h` is too small.
+### Ordem de Precisão
 
-## Convergence Analysis
+A ordem de precisão de um método de diferenças finitas indica como o erro da aproximação muda à medida que o tamanho do passo `h` é reduzido.
 
-Convergence analysis in numerical differentiation examines how the approximation approaches the true derivative as the step size `h` tends to zero.
+- **O(h) (Precisão de primeira ordem):** O erro é aproximadamente proporcional a `h`. Reduzir `h` pela metade, aproximadamente, reduz o erro pela metade. Os métodos de diferença progressiva e regressiva são tipicamente O(h).
+- **O(h^2) (Precisão de segunda ordem):** O erro é aproximadamente proporcional a `h^2`. Reduzir `h` pela metade, aproximadamente, reduz o erro em um quarto. O método de diferença central para a primeira derivada é tipicamente O(h^2).
+- **O(h^4) (Precisão de quarta ordem):** O erro é aproximadamente proporcional a `h^4`. Reduzir `h` pela metade, aproximadamente, reduz o erro por um fator de cerca de 16. Métodos de ordem superior podem ser derivados usando mais pontos, como o stencil de cinco pontos para a primeira derivada, que é O(h^4).
 
-Ideally, as `h` decreases, the truncation error (the error from approximating the derivative with a finite difference formula) also decreases. For example, for an O(h^2) method, the truncation error is proportional to `h^2`. So, reducing `h` should improve accuracy.
+Métodos de ordem superior geralmente fornecem melhor precisão para um dado tamanho de passo `h`, mas podem exigir mais avaliações de função e podem ser mais suscetíveis a erros de arredondamento se `h` for muito pequeno.
 
-However, there's a trade-off. When `h` becomes very small, round-off errors due to the limited precision of computer arithmetic can become significant. Subtracting two very close numbers (like `f(x+h)` and `f(x)`) can lead to a loss of precision, and then dividing by a very small `h` can amplify this error.
+### Uso no Código
 
-Therefore, there is an optimal value of `h` that balances truncation error and round-off error. Choosing an excessively small `h` can lead to less accurate results than a moderately small `h`. Techniques like Richardson extrapolation can be used to estimate the derivative more accurately and also to estimate the optimal `h`.
+O tipo `Derivator` é a interface principal para realizar a diferenciação numérica. Ele é inicializado usando o construtor `NewDerivator(strategy string, order uint)`.
 
-# Numerical Integration (Quadrature)
+- O parâmetro `strategy` pode ser um de "Forward", "Backward" ou "Central".
+- O parâmetro `order` especifica a ordem de precisão desejada para a estratégia escolhida.
 
-Numerical integration, also known as quadrature, involves approximating the value of a definite integral. This is essential when the antiderivative of the integrand is unknown or difficult to find, or when the function is only known at discrete data points.
+A `DerivacaoFactory` é responsável por interpretar essas entradas e selecionar o objeto de estratégia concreto apropriado. Por exemplo, se `strategy` for "Forward" e `order` for 1, a fábrica instanciará um objeto `firstorder.ForwardFirstOrderStrategy`.
 
-## Newton-Cotes Formulas
+Uma vez que o `Derivator` é configurado com uma estratégia, seu método `Calculate` pode ser chamado para calcular a derivada. O método `Calculate` recebe um parâmetro `derivate`, que pode ser 1, 2 ou 3, para calcular a primeira, segunda ou terceira derivada, respectivamente.
 
-Newton-Cotes formulas are a group of numerical integration rules based on evaluating the integrand at equally spaced points. The general idea is to approximate the function to be integrated by an interpolating polynomial of a certain degree and then integrate this polynomial.
+A estratégia selecionada (por exemplo, `CentralFourthOrderStrategy`) então fornece as fórmulas e coeficientes específicos necessários para calcular a derivada solicitada (1ª, 2ª ou 3ª) de acordo com seu método de diferenças finitas subjacente e ordem de precisão.
 
-- **General Idea:** Replace the function `f(x)` over the interval `[a, b]` with a polynomial that is easy to integrate. The degree of the polynomial and the points used for interpolation determine the specific rule.
-- **Open vs. Closed Formulas:**
-  - **Closed formulas** use the function values at the endpoints of the integration interval. Examples include the Trapezoidal rule and Simpson's rules.
-  - **Open formulas** use only function values at points strictly within the integration interval. These are useful for integrands with singularities at the endpoints. An example is the Midpoint rule (which is also the simplest open Newton-Cotes formula, based on a zero-degree polynomial or constant).
+### Análise de Convergência
 
-### Common Newton-Cotes Methods
+A análise de convergência na diferenciação numérica examina como a aproximação se aproxima da verdadeira derivada à medida que o tamanho do passo `h` tende a zero.
 
-- **Trapezoidal Rule:** This rule approximates the integral by fitting a first-degree polynomial (a straight line) between the function values at the endpoints of the interval (or each subinterval in the composite version). The area under this line (a trapezoid) approximates the integral.
-- **Simpson's Rule (1/3 Rule):** This rule uses a second-degree polynomial (a parabola) to interpolate the function, using three equally spaced points: the two endpoints and the midpoint of the interval. It generally provides higher accuracy than the Trapezoidal rule for smooth functions.
-- **Simpson's Rule (3/8 Rule):** This rule uses a third-degree polynomial to interpolate the function, using four equally spaced points. It can be more accurate than the 1/3 rule for some functions but requires one more function evaluation.
+Idealmente, à medida que `h` diminui, o erro de truncamento (o erro de aproximar a derivada com uma fórmula de diferença finita) também diminui. Por exemplo, para um método O(h^2), o erro de truncamento é proporcional a `h^2`. Portanto, reduzir `h` deve melhorar a precisão.
 
-## Gaussian Quadrature
+No entanto, há uma compensação. Quando `h` se torna muito pequeno, erros de arredondamento devido à precisão limitada da aritmética computacional podem se tornar significativos. Subtrair dois números muito próximos (como `f(x+h)` e `f(x)`) pode levar a uma perda de precisão, e então dividir por um `h` muito pequeno pode amplificar esse erro.
 
-Gaussian quadrature formulas offer an alternative approach that often achieves higher accuracy for the same number of function evaluations compared to Newton-Cotes rules.
+Portanto, existe um valor ótimo de `h` que equilibra o erro de truncamento e o erro de arredondamento. Escolher um `h` excessivamente pequeno pode levar a resultados menos precisos do que um `h` moderadamente pequeno. Técnicas como a extrapolação de Richardson podem ser usadas para estimar a derivada com mais precisão e também para estimar o `h` ótimo.
 
-- **General Idea:** Instead of fixing the abscissas (x-values) to be equally spaced, Gaussian quadrature methods choose the locations of the evaluation points (nodes) and the weights optimally. These nodes are typically the roots of a family of orthogonal polynomials. By choosing these nodes and weights strategically, Gaussian quadrature can exactly integrate polynomials of degree `2n-1` with only `n` function evaluations.
-- **Gauss-Legendre Quadrature:** This is a common type of Gaussian quadrature used for integrals over the interval `[-1, 1]`. The nodes are the roots of Legendre polynomials, and the weights are chosen to achieve the highest possible accuracy. Integrals over other intervals `[a, b]` can be transformed to `[-1, 1]` using a linear change of variable.
+---
 
-## Convergence and Error in Numerical Integration
+## Integração Numérica (Quadratura)
 
-Similar to numerical differentiation, the error in numerical integration depends on the method used and the number of evaluation points (or the width of subintervals, `h`, in composite rules).
+A integração numérica, também conhecida como quadratura, envolve a aproximação do valor de uma integral definida. Isso é essencial quando a antiderivada do integrando é desconhecida ou difícil de encontrar, ou quando a função é conhecida apenas em pontos de dados discretos.
 
-- **Truncation Error:** This error arises from approximating the function with a simpler one (e.g., a polynomial). For Newton-Cotes rules like the composite Trapezoidal rule, the error is typically of order O(h^2), while for the composite Simpson's 1/3 rule, it's O(h^4), where `h` is the width of the subintervals. Gaussian quadrature with `n` points can integrate polynomials up to degree `2n-1` exactly, leading to very rapid convergence for smooth functions.
-- **Round-off Error:** As with differentiation, performing many calculations with finite precision can lead to an accumulation of round-off errors. However, in integration, round-off errors are generally less problematic than in differentiation because the operations involved (summation and multiplication by weights) are less sensitive to small `h` values than division by `h` or `h^2`.
+### Fórmulas de Newton-Cotes
 
-Generally, increasing the number of evaluation points (or decreasing `h` in composite rules) improves the accuracy of the approximation by reducing the truncation error. However, for very large numbers of points, round-off error might eventually start to increase, though this is less of a concern than in differentiation. Adaptive quadrature methods adjust the step size `h` (or the number of points) in different parts of the integration domain to achieve a desired level of accuracy efficiently.
+As fórmulas de Newton-Cotes são um grupo de regras de integração numérica baseadas na avaliação do integrando em pontos igualmente espaçados. A ideia geral é aproximar a função a ser integrada por um polinômio interpolador de um certo grau e, em seguida, integrar esse polinômio.
+
+- **Ideia Geral:** Substituir a função `f(x)` sobre o intervalo `[a, b]` por um polinômio que seja fácil de integrar. O grau do polinômio e os pontos usados para interpolação determinam a regra específica.
+- **Fórmulas Abertas vs. Fechadas:**
+  - **Fórmulas fechadas** usam os valores da função nos pontos finais do intervalo de integração. Exemplos incluem a Regra do Trapézio e as regras de Simpson.
+  - **Fórmulas abertas** usam apenas valores da função em pontos estritamente dentro do intervalo de integração. Estas são úteis para integrandos com singularidades nos pontos finais. Um exemplo é a Regra do Ponto Médio (que também é a fórmula de Newton-Cotes aberta mais simples, baseada em um polinômio de grau zero ou constante).
+
+#### Métodos Comuns de Newton-Cotes
+
+- **Regra do Trapézio:** Esta regra aproxima a integral ajustando um polinômio de primeiro grau (uma linha reta) entre os valores da função nos pontos finais do intervalo (ou cada subintervalo na versão composta). A área sob esta linha (um trapézio) aproxima a integral.
+- **Regra de Simpson (Regra 1/3):** Esta regra usa um polinômio de segundo grau (uma parábola) para interpolar a função, usando três pontos igualmente espaçados: os dois pontos finais e o ponto médio do intervalo. Geralmente, oferece maior precisão do que a Regra do Trapézio para funções suaves.
+- **Regra de Simpson (Regra 3/8):** Esta regra usa um polinômio de terceiro grau para interpolar a função, usando quatro pontos igualmente espaçados. Pode ser mais precisa do que a regra 1/3 para algumas funções, mas requer uma avaliação de função a mais.
+
+#### Estratégias Newton-Cotes Implementadas
+
+As seguintes estratégias Newton-Cotes são implementadas em `internal/integration/strategies.go` e são utilizadas pelo `Integrator` quando o nome da estratégia correspondente é escolhido:
+
+- `strategies.NewtonCotesOrder1`: Implementa a **Regra do Trapézio**.
+- `strategies.NewtonCotesOrder2`: Implementa a **Regra de Simpson 1/3**.
+- `strategies.NewtonCotesOrder3`: Implementa a **Regra de Simpson 3/8**.
+- `strategies.NewtonCotesOrder4`: Implementa uma fórmula de Newton-Cotes de quarta ordem, comumente conhecida como **Regra de Boole**.
+
+### Quadratura Gaussiana
+
+As fórmulas de quadratura Gaussiana oferecem uma abordagem alternativa que frequentemente alcança maior precisão para o mesmo número de avaliações de função em comparação com as regras de Newton-Cotes.
+
+- **Ideia Geral:** Em vez de fixar as abscissas (valores x) para serem igualmente espaçadas, os métodos de quadratura Gaussiana escolhem as localizações dos pontos de avaliação (nós) e os pesos de forma ótima. Esses nós são tipicamente as raízes de uma família de polinômios ortogonais. Ao escolher esses nós e pesos estrategicamente, a quadratura Gaussiana pode integrar exatamente polinômios de grau `2n-1` com apenas `n` avaliações de função.
+- **Quadratura de Gauss-Legendre:** Este é um tipo comum de quadratura Gaussiana usado para integrais sobre o intervalo `[-1, 1]`. Os nós são as raízes dos polinômios de Legendre, e os pesos são escolhidos para alcançar a maior precisão possível. Integrais sobre outros intervalos `[a, b]` podem ser transformadas para `[-1, 1]` usando uma mudança linear de variável.
+
+#### Estratégias Gauss-Legendre Implementadas
+
+As seguintes estratégias de quadratura Gauss-Legendre são implementadas em `internal/integration/strategies.go`. Elas são usadas pelo `Integrator` e representam métodos com diferentes números de pontos otimamente escolhidos, fornecendo vários níveis de precisão:
+
+- `strategies.GaussLegendreOrder1`
+- `strategies.GaussLegendreOrder2`
+- `strategies.GaussLegendreOrder3`
+- `strategies.GaussLegendreOrder4`
+
+Essas estratégias correspondem à quadratura Gauss-Legendre usando 1, 2, 3 e 4 pontos, respectivamente. Aumentar a ordem (número de pontos) geralmente leva a maior precisão para funções suaves.
+
+### Uso no Código
+
+O tipo `Integrator` é a interface principal para realizar a integração numérica. Ele é inicializado usando o construtor `NewIntegrator(strategyName string)`.
+
+- O parâmetro `strategyName` é uma string que identifica unicamente a estratégia de integração desejada, por exemplo, "NewtonCotesOrder1" ou "GaussLegendreOrder2".
+
+A `IntegrationFactory` é responsável por interpretar o `strategyName` e fornecer o objeto de estratégia concreto correspondente (por exemplo, uma instância de `strategies.NewtonCotesOrder1` ou `strategies.GaussLegendreOrder2`).
+
+Uma vez que o `Integrator` é configurado com uma estratégia específica, seu método `Calculate(fn Func, a, b float64, n int) (float64, error)` pode ser chamado. Este método usa a estratégia selecionada para calcular a integral definida da função `fn` de `a` a `b`, potencialmente usando `n` subintervalos ou pontos, dependendo da estratégia.
+
+### Convergência e Erro na Integração Numérica
+
+Semelhante à diferenciação numérica, o erro na integração numérica depende do método utilizado e do número de pontos de avaliação (ou da largura dos subintervalos, `h`, em regras compostas).
+
+- **Erro de Truncamento:** Este erro surge da aproximação da função por uma mais simples (por exemplo, um polinômio). Para regras de Newton-Cotes como a regra do Trapézio composta, o erro é tipicamente da ordem O(h^2), enquanto para a regra de Simpson 1/3 composta, é O(h^4), onde `h` é a largura dos subintervalos. A quadratura Gaussiana com `n` pontos pode integrar polinômios até o grau `2n-1` exatamente, levando a uma convergência muito rápida para funções suaves.
+- **Erro de Arredondamento:** Assim como na diferenciação, realizar muitos cálculos com precisão finita pode levar ao acúmulo de erros de arredondamento. No entanto, na integração, os erros de arredondamento são geralmente menos problemáticos do que na diferenciação, porque as operações envolvidas (soma e multiplicação por pesos) são menos sensíveis a pequenos valores de `h` do que a divisão por `h` ou `h^2`.
+
+Geralmente, aumentar o número de pontos de avaliação (ou diminuir `h` em regras compostas) melhora a precisão da aproximação, reduzindo o erro de truncamento. No entanto, para um número muito grande de pontos, o erro de arredondamento pode eventualmente começar a aumentar, embora isso seja menos preocupante do que na diferenciação. Métodos de quadratura adaptativa ajustam o tamanho do passo `h` (ou o número de pontos) em diferentes partes do domínio de integração para atingir um nível de precisão desejado de forma eficiente.
+
+---
+
+## Conclusão
+
+Este documento forneceu uma visão geral dos principais métodos numéricos para diferenciação e integração empregados no projeto. Ao detalhar tanto os fundamentos teóricos quanto as implementações práticas por meio de estratégias específicas e padrões de fábrica, ele serve como um guia para o conjunto de ferramentas numéricas disponíveis. Esses métodos oferecem soluções robustas e flexíveis para as tarefas de análise numérica encontradas na aplicação.
+
+Fontes
