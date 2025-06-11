@@ -155,41 +155,41 @@ func View(model *MainModel) string {
 			currentValueStyle := InputValueStyle // Default style for values
 
 			// Determine if the current item is an input field and apply focused style if necessary
-			isCurrentChoiceFocusableInput := (choiceText == "Limite Inferior (a)" && model.integrationFocus == common.FocusIntegrationA) ||
-				(choiceText == "Limite Superior (b)" && model.integrationFocus == common.FocusIntegrationB) ||
-				(choiceText == "Num de Subintervalos/Ordem (n)" && model.integrationFocus == common.FocusIntegrationN)
+			isCurrentChoiceFocusableInput := (choiceText == "Limite Inferior (a)" && model.focus == common.FocusIntegrationA) ||
+				(choiceText == "Limite Superior (b)" && model.focus == common.FocusIntegrationB) ||
+				(choiceText == "Num de Subintervalos/Ordem (n)" && model.focus == common.FocusIntegrationN)
 
 			if isSelected && isCurrentChoiceFocusableInput {
 				currentValueStyle = FocusedInputStyle
-			} else if isSelected && model.integrationFocus != common.FocusNone &&
-				(choiceText == "Limite Inferior (a)" || choiceText == "Limite Superior (b)" || choiceText == "Num de Subintervalos/Ordem (n)") {
-				// If another input is focused, but this one is selected (cursor is on it), keep standard value style
-				// This case might be redundant if selection follows focus, but good for clarity
 			}
-
+			//else if isSelected && model.focus != common.FocusNone &&
+			//	(choiceText == "Limite Inferior (a)" || choiceText == "Limite Superior (b)" || choiceText == "Num de Subintervalos/Ordem (n)") {
+			// If another input is focused, but this one is selected (cursor is on it), keep standard value style
+			// This case might be redundant if selection follows focus, but good for clarity
+			//}
 
 			switch choiceText {
 			case "Método":
-				valueStr = model.selectedIntegrationMethod
+				valueStr = model.integrationMethodsOptions[model.selectedIntegrationMethod].Display
 			case "Função":
-				if model.selectedIntegrationFunctionDef.Func != nil {
-					valueStr = model.selectedIntegrationFunctionDef.Name
+				if model.selectedFunctionDef.Func != nil {
+					valueStr = model.selectedFunctionDef.Name
 				} else {
 					valueStr = "Nenhuma"
 				}
 			case "Limite Inferior (a)":
 				valueStr = model.currentA
-				if model.integrationFocus == common.FocusIntegrationA {
+				if model.focus == common.FocusIntegrationA {
 					valueStr += CursorStyle.Render("_")
 				}
 			case "Limite Superior (b)":
 				valueStr = model.currentB
-				if model.integrationFocus == common.FocusIntegrationB {
+				if model.focus == common.FocusIntegrationB {
 					valueStr += CursorStyle.Render("_")
 				}
 			case "Num de Subintervalos/Ordem (n)":
 				valueStr = model.currentN
-				if model.integrationFocus == common.FocusIntegrationN {
+				if model.focus == common.FocusIntegrationN {
 					valueStr += CursorStyle.Render("_")
 				}
 			}
@@ -202,7 +202,7 @@ func View(model *MainModel) string {
 			}
 		}
 		s.WriteString(HelpStyle.Render("\n(Navegue com ↑/↓, 'Enter' para selecionar/editar, 'q' para voltar, Ctrl+C para sair)"))
-		switch model.integrationFocus {
+		switch model.focus {
 		case common.FocusIntegrationA:
 			s.WriteString(HelpStyle.Render("\n[EDITANDO Limite Inferior (a): Digite o valor e pressione Enter para confirmar]"))
 		case common.FocusIntegrationB:
@@ -214,8 +214,8 @@ func View(model *MainModel) string {
 	case common.StateSelectIntegrationMethod:
 		s.WriteString(TitleStyle.Render("Selecione o Método de Integração:"))
 		s.WriteString("\n\n")
-		for i, methodName := range model.availableIntegrationMethods {
-			s.WriteString(RenderListItem(methodName, model.selectionCursor == i))
+		for i, methodName := range model.integrationMethodsOptions {
+			s.WriteString(RenderListItem(methodName.Display, model.selectionCursor == i))
 			s.WriteString("\n")
 		}
 		s.WriteString(HelpStyle.Render("\n('Enter' para confirmar, 'q' para voltar)"))

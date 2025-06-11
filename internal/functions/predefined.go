@@ -46,6 +46,10 @@ var (
 	}
 )
 
+func SetFunctionDefinitions(functions []common.FunctionDefinition) {
+	PredefinedFunctions = functions
+}
+
 func GetPredefinedFunc(id string) common.MathFunc {
 	for _, def := range PredefinedFunctions {
 		if def.ID == id {

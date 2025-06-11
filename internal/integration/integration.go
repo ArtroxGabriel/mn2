@@ -18,7 +18,28 @@ type Integrator struct {
 // Returns:
 //   - *Integrator: A configured integrator instance
 //   - error: An error if the strategyName is invalid
-func NewIntegrator(strategyName string) (*Integrator, error) {
+func NewIntegrator(strategyEnum int) (*Integrator, error) {
+	fmt.Println("selected strategy:", strategyEnum)
+	var strategyName string
+	switch strategyEnum {
+	case 0:
+		strategyName = "NewtonCotesOrder1"
+	case 1:
+		strategyName = "NewtonCotesOrder2"
+	case 2:
+		strategyName = "NewtonCotesOrder3"
+	case 3:
+		strategyName = "NewtonCotesOrder4"
+	case 4:
+		strategyName = "GaussLegendreOrder1"
+	case 5:
+		strategyName = "GaussLegendreOrder2"
+	case 6:
+		strategyName = "GaussLegendreOrder3"
+	case 7:
+		strategyName = "GaussLegendreOrder4"
+	}
+
 	strategy, err := IntegrationFactory(strategyName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create integrator: %w", err)
